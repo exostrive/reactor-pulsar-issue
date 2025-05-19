@@ -92,10 +92,13 @@ public class IssueTest {
                         .messagePipeline()
                         .messageHandler(handler).build()) {
                     pipeline.start();
+                    pipeline.untilConsumingStarted();
                     if (i == (restarts - 1)) {
                         reactiveMessageSender.sendOne(MessageSpec.of(restarts)).block();
                         assertThat(count.await(5, TimeUnit.SECONDS)).isTrue();
                     }
+                    pipeline.stop();
+                    pipeline.untilConsumingStopped();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

@@ -12,7 +12,7 @@ repositories {
 
 
 dependencies {
-    implementation enforcedPlatform("org.apache.pulsar:pulsar-client-reactive-bom:0.6.0")
+    implementation enforcedPlatform("org.apache.pulsar:pulsar-client-reactive-bom:0.6.1-SNAPSHOT")
     implementation("org.apache.pulsar:pulsar-client-reactive-adapter")
     implementation("org.apache.pulsar:pulsar-client-all:4.0.4")
 
