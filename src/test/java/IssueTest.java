@@ -1,5 +1,7 @@
 import java.time.Duration;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import reactor.core.publisher.Mono;
@@ -79,32 +81,24 @@ public class IssueTest {
                 .batchingEnabled(false)
                 .build();
 
-            AtomicInteger count = new AtomicInteger(0);
-            Function<Message<Integer>, Publisher<Void>> handler = message -> {
-                System.out.println("Message date=" + new Date() + " value=" + message.getValue());
-                count.incrementAndGet();
-                return Mono.empty();
-            };
-
             for(int i = 0; i < restarts; i++) {
+                final CountDownLatch count = new CountDownLatch(1);
+                Function<Message<Integer>, Publisher<Void>> handler = message -> {
+                    System.out.println("Message date=" + new Date() + " value=" + message.getValue());
+                    count.countDown();
+                    return Mono.empty();
+                };
                 try (ReactiveMessagePipeline pipeline = buildReactiveConsumer(reactivePulsarClient, Schema.INT32, topicName)
                         .messagePipeline()
                         .messageHandler(handler).build()) {
                     pipeline.start();
+                    if (i == (restarts - 1)) {
+                        reactiveMessageSender.sendOne(MessageSpec.of(restarts)).block();
+                        assertThat(count.await(5, TimeUnit.SECONDS)).isTrue();
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }
-
-            try (ReactiveMessagePipeline pipeline = buildReactiveConsumer(reactivePulsarClient, Schema.INT32, topicName)
-                    .messagePipeline()
-                    .messageHandler(handler).build()) {
-                pipeline.start();
-                reactiveMessageSender.sendOne(MessageSpec.of(restarts)).block();
-                Thread.sleep(5000);
-                assertThat(count.get()).isEqualTo(1);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
         }
     }

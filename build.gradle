@@ -6,6 +6,7 @@ group = 'com.exostrive.reactor-pulsar-issue'
 version = '1.0-SNAPSHOT'
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -25,6 +26,7 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    testLogging { showStandardStreams = true }
 }
 
 java {
