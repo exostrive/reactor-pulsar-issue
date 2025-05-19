@@ -91,14 +91,12 @@ public class IssueTest {
                 try (ReactiveMessagePipeline pipeline = buildReactiveConsumer(reactivePulsarClient, Schema.INT32, topicName)
                         .messagePipeline()
                         .messageHandler(handler).build()) {
-                    pipeline.start();
-                    pipeline.untilConsumingStarted();
+                    pipeline.start().untilConsumingStarted().block();
                     if (i == (restarts - 1)) {
                         reactiveMessageSender.sendOne(MessageSpec.of(restarts)).block();
                         assertThat(count.await(5, TimeUnit.SECONDS)).isTrue();
                     }
-                    pipeline.stop();
-                    pipeline.untilConsumingStopped();
+                    pipeline.stop().untilConsumingStopped().block();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
